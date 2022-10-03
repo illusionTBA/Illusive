@@ -1,0 +1,15 @@
+{
+    "editor.formatOnSave": true,
+    "editor.cursorSmoothCaretAnimation": true,
+    "editor.inlineSuggest.enabled": true,
+    "editor.cursorBlinking": "phase",
+
+    "terminal.integrated.fontFamily": "Hack NF",
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "[javascript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    }
+
+}
