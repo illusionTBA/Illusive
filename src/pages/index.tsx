@@ -5,12 +5,39 @@ import { MdTab } from "react-icons/md";
 import styles from "../styles/Home.module.css";
 import { loadFull } from "tsparticles";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import type { NextRouter } from "next/router";
+import { useEffect, useState, MouseEvent } from "react";
 import Paths from "./prefix";
 import { useHistory } from "../hooks";
 
+
+declare global {
+  interface HTMLDivElement {
+    isblur: boolean;
+    isfocus: boolean;
+    onfocus: Function;
+    onblur: Function;
+    onpaste: Function;
+  }
+
+  interface HTMLElement {
+    over: boolean;
+  }
+
+  interface Window {
+    style: HTMLStyleElement;
+    theme: Function;
+    Router: NextRouter;
+  }
+
+  interface HTMLIFrameElement {
+    onbeforeunload: Function;
+    loaded: boolean;
+  }
+}
+
 const Home: NextPage = () => {
-  const [apps, setApps] = useState();
+  const [apps, setApps] = useState([])!;
   const [gethistory] = useHistory();
   useEffect(() => {}, []);
 
@@ -43,7 +70,7 @@ const Home: NextPage = () => {
     el2.classList.toggle(styles["apps-up"]);
   };
 
-  const cancelEvent: Function = (e: any) => {
+  const cancelEvent = (e: MouseEvent) => {
     e.preventDefault();
   };
 
@@ -68,75 +95,77 @@ const Home: NextPage = () => {
       console.log(ls);
 
       localStorage.setItem("ill@history", JSON.stringify(ls));
-    };
-    var urlbar = document.getElementById("urlbar");
-    urlbar.onfocus = (e) => {
+    }
+
+    var urlbar = (document.getElementById("urlbar") as HTMLDivElement | null)!;
+
+    urlbar.onfocus = () => {
       urlbar.isfocus = true;
       urlbar.isblur = false;
-    };
-    urlbar.onblur = (e) => {
-      urlbar!.isblur = true;
-      urlbar!.isfocus = false;
-    };
-    urlbar!.onpaste = (e) => {
-      urlbar!.innerHTML = urlbar!.innerText;
-    };
-    urlbar!.addEventListener("keyup", (e) => {
+    }
+
+    urlbar.onblur = () => {
+      urlbar.isblur = true;
+      urlbar.isfocus = false;
+    }
+
+    urlbar.onpaste = () => {
+      urlbar.innerHTML = urlbar.innerText;
+    }
+
+    urlbar.addEventListener("keyup", (e) => {
       if (urlbar!.innerText.trim()) urlbar!.setAttribute("val", "true");
       else urlbar!.removeAttribute("val");
       if (e.keyCode === 13) {
         e.preventDefault();
-        document.getElementById("urlbar").blur();
-        document.getElementById("urlbar").innerHTML =
-          document.getElementById("urlbar").innerText;
-        var uri = document.getElementById("urlbar").innerText;
+        urlbar.blur();
+        urlbar.innerHTML =
+          urlbar.innerText;
+        var uri = urlbar.innerText;
         var removeHandler = uri.slice(Math.max(uri.lastIndexOf("://")) + 3);
         var frame = document
           .getElementsByClassName(styles["main-frame"])[0]
-          .querySelector("iframe");
+          .querySelector("iframe")!;
         if (!uri.startsWith("https://") && !uri.startsWith("http://")) {
           uri = encodeURIComponent(
             "https://google.com/search?q=" + decodeURIComponent(uri)
           );
         } else if (uri.startsWith("https://") || uri.startsWith("http://")) {
           if (uri.startsWith("https://")) {
-            document.getElementById("urlbar").innerHTML = "";
-            document.getElementById(
-              "urlbar"
-            ).innerHTML = `<span class="${styles["marking"]}">https://</span>${removeHandler}`;
+            urlbar.innerHTML = "";
+            urlbar.innerHTML = `<span class="${styles["marking"]}">https://</span>${removeHandler}`;
           } else if (uri.startsWith("http://")) {
-            document.getElementById("urlbar").innerHTML = "";
-            document.getElementById(
-              "urlbar"
-            ).innerHTML = `<span class="${styles["marking"]}">http://</span>${removeHandler}`;
+            urlbar.innerHTML = "";
+            urlbar.innerHTML = `<span class="${styles["marking"]}">http://</span>${removeHandler}`;
           }
         }
-        history.push({ uri: decodeURI(uri) });
+        // history.push({ uri: decodeURI(uri) });
         frame.src =
           "/route?query=" + encodeURIComponent(decodeURIComponent(uri));
       }
     });
 
-    var el = document.getElementsByClassName(styles["historyTab"])[0];
+    var el = (document.getElementsByClassName(styles["historyTab"])[0] as HTMLDivElement | null)!;
     el.style.display = "none";
 
     window.onload = function (e) {
       setTimeout(function () {
         if (localStorage.getItem("ill@title")) {
-          document.title = localStorage.getItem("ill@title");
+          document.title = localStorage.getItem("ill@title")!;
         } else {
           document.title = "Illusive";
         }
 
         if (localStorage.getItem("ill@icon")) {
-          document.querySelector('link[rel="icon"]').href =
-            localStorage.getItem("ill@icon");
+          (document.querySelector('link[rel="icon"]') as HTMLLinkElement).href =
+            localStorage.getItem("ill@icon")!;
         } else {
-          document.querySelector('link[rel="icon"]').href = "/favicon.ico";
+          (document.querySelector('link[rel="icon"]') as HTMLLinkElement).href = "/favicon.ico";
         }
       }, 1);
 
-      var contextElement = document.getElementById(styles["context-menu"]);
+      var contextElement = document.getElementById(styles["context-menu"])!;
+
       window.addEventListener("contextmenu", function (event) {
         event.preventDefault();
 
@@ -225,7 +254,7 @@ const Home: NextPage = () => {
         return;
       }
       if (localStorage.getItem("ill@theme")) {
-        var theme = localStorage.getItem("ill@theme");
+        var theme = localStorage.getItem("ill@theme")!;
         var docs = document.querySelectorAll("*");
         docs.forEach((el) => {
           el.setAttribute("data-theme", theme);
@@ -237,17 +266,18 @@ const Home: NextPage = () => {
 
     var frame = document
       .getElementsByClassName(styles["main-frame"])[0]
-      .querySelector("iframe");
+      .querySelector("iframe")!;
 
     addEventListener("load", (e) => {
       themeHandler();
-      frame.onbeforeunload = function (e) {
+      frame.onbeforeunload = function () {
         frame.loaded = false;
-      };
+      }
+
       frame.onload = function (i) {
         frame.onload = function (e) {
           frame.loaded = true;
-          var path = frame.contentWindow.location.pathname;
+          var path = frame.contentWindow!.location.pathname;
 
           if (Paths[path]) {
             var newPath = Paths[path];
@@ -258,7 +288,7 @@ const Home: NextPage = () => {
             }
           } else {
             if (!urlbar.isfocus && frame.loaded) {
-              var toSet = path;
+              var toSet: URL | string = path;
 
               if (toSet.startsWith("/service/")) {
                 console.log(toSet);
@@ -275,12 +305,12 @@ const Home: NextPage = () => {
 
                 console.log({
                   url: toSet.href,
-                  name: frame.contentDocument.title,
+                  name: frame.contentDocument!.title,
                 });
 
                 addToHistory({
                   url: toSet.href,
-                  name: frame.contentDocument.title,
+                  name: frame.contentDocument!.title,
                 });
 
                 urlbar.setAttribute("val", toSet.href);
@@ -310,7 +340,7 @@ const Home: NextPage = () => {
                 }
               } else {
                 if (!urlbar.isfocus && frame.loaded) {
-                  var toSet = path;
+                  var toSet: URL | string = path;
                   if (toSet.startsWith("/service/")) {
                     toSet = new URL(
                       decodeURIComponent(
@@ -338,8 +368,8 @@ const Home: NextPage = () => {
   }
 
   const toggleTabs: Function = () => {
-    var el = document.getElementsByClassName(styles["historyTab"])[0];
-    var tabbyBTN = document.getElementById("tabby");
+    var el = (document.getElementsByClassName(styles["historyTab"])[0] as HTMLDivElement | null)!;
+    var tabbyBTN = document.getElementById("tabby")!;
 
     if (el.id == "noactive") {
       tabbyBTN.style.fill = "#3479FF";
@@ -350,30 +380,30 @@ const Home: NextPage = () => {
       el.style.display = "flex";
       tabbyBTN.style.fill = "white";
     }
-  };
+  }
 
   // browser button for the right
 
   const iframeback = () => {
-    history.go(-1);
-  };
+    // history.go(-1);
+  }
 
   const iframefoward = () => {
-    history.go(1);
-  };
+    // history.go(1);
+  }
 
   const iframereload = () => {
-    document.getElementById("frame").contentWindow.location.reload();
-  };
+    (document.getElementById("frame") as HTMLIFrameElement | null)!.contentWindow!.location.reload();
+  }
 
   var Router = useRouter();
 
-  const openApplication: Function = (action, e, Router) => {
+  const openApplication: Function = (action: string, e: string, Router: NextRouter) => {
     var frame = window.parent.document
       .getElementsByClassName(styles["main-frame"])[0]
-      .querySelector("iframe");
+      .querySelector("iframe")!;
     if (action == "proxy") {
-      history.push({ uri: e });
+      // history.push({ uri: e });
       frame.src = "/route?query=" + encodeURIComponent(decodeURIComponent(e));
     } else if (action == "redirect") frame.src = e;
     else if (action == "home") {
@@ -381,7 +411,7 @@ const Home: NextPage = () => {
     } else if (action == "route") {
       Router.replace(e);
     } else frame.src = e;
-  };
+  }
 
   if (global.window) global.window.Router = Router;
 
@@ -389,24 +419,27 @@ const Home: NextPage = () => {
     if (global.window) {
       Router.replace("/apps");
     }
-  };
+  }
+
   const Settings: Function = () => {
     if (global.window) {
       Router.replace("/options");
     }
-  };
-  const particlesInit: Function = async (main) => {
+  }
+
+  const particlesInit: Function = async (main: any) => {
     await loadFull(main);
-  };
+  }
+
   const particlesLoaded: Function = () => {};
 
   const backup = console.warn;
 
-  console.warn = function filterWarnings(msg) {
+  console.warn = function filterWarnings(msg, ...args) {
     const supressedWarnings = ["warning text", "other warning text"];
 
     if (!supressedWarnings.some((entry) => msg.includes(entry))) {
-      backup.apply(console, arguments);
+      backup.apply(console, args);
     }
   };
 
@@ -450,7 +483,7 @@ const Home: NextPage = () => {
                   key={tab.title}
                   className={styles["historyapp"]}
                   onClick={(e) => {
-                    openApplication("proxy", tab.url, Router);
+                    openApplication("proxy", tab.uri, Router);
                     toggleTabs();
                   }}
                 >
@@ -468,7 +501,7 @@ const Home: NextPage = () => {
         </div>
 
         <div id="apps" className={styles["apps"]}>
-          {apps.map((app) => {
+          {apps.map((app: any) => {
             if (app.col == "false") return <></>;
 
             if (app.type == "sep") {
